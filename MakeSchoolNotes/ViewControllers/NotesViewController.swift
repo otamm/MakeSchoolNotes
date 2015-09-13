@@ -13,6 +13,29 @@ class NotesViewController: UIViewController {
     
     @IBOutlet weak var tableView:UITableView!;
     
+    @IBAction func unwindToSegue(segue: UIStoryboardSegue) {
+        
+        if let identifier = segue.identifier {
+            
+            let realm = Realm();
+            
+            switch identifier {
+                
+            case "Save":
+                let source = segue.sourceViewController as! NewNoteViewController; //1
+                
+                realm.write() {
+                    realm.add(source.note!);
+                }
+                
+            default:
+                println("No one loves \(identifier)")
+            }
+            
+            self.notes = realm.objects(Note).sorted("modificationDate", ascending: false);
+        }
+    }
+    
     var notes: Results<Note>! {
         didSet {
             // Whenever notes update, update the table view
@@ -24,21 +47,25 @@ class NotesViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         self.tableView.dataSource = self;
+        self.tableView.delegate = self;
         
         // dynamically adds an arbitrary note to test table view reloading and displaying new info gotten after some note addition:
-        let myNote = Note();
-        myNote.title = "Some useless testing text";
-        myNote.content = "raw static information is worth nothing.";
+        //let myNote = Note();
+        //myNote.title = "Some useless testing text";
+        //myNote.content = "raw static information is worth nothing.";
         
         // establishes a connection to Realm.
         let realm = Realm();
         // write method will store information that can be afterwards retrieved; this storage logic will be provided via a closure.
         realm.write() {
-            realm.add(myNote);
+            //realm.deleteAll(); // clears the app out of data.
+            //realm.add(myNote);
         }
         
         // fetches saved notes and assigns the fetch value to the 'notes' variable:
-        self.notes = realm.objects(Note);
+        //self.notes = realm.objects(Note);
+        // sorts notes' display based on the 'modificationDate' row in descending order.
+        self.notes = realm.objects(Note).sorted("modificationDate", ascending: false)
     }
 
     override func didReceiveMemoryWarning() {
@@ -49,6 +76,8 @@ class NotesViewController: UIViewController {
 }
 
 // extends the above class with functionality from another class.
+
+// implements basic logic of data source.
 extension NotesViewController:UITableViewDataSource {
     
     func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
@@ -77,5 +106,41 @@ extension NotesViewController:UITableViewDataSource {
             return 0;
         }*/
     }
+}
+
+// implements further functionalities with Realm, allowing access to a specific data cell displayed.
+extension NotesViewController: UITableViewDelegate {
+    
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        //1 When a note has been selected, we want to assign this note to a variable for easy access. When a row is selected, the row index is passed as a parameter so we can grab the correct note object using the objectAtIndex method.
+        
+        //currentNote = notes[indexPath.row]
+        
+        //2
+        // We will be performing a segue to a new Note Display View Controller that will display the selected note.
+        
+        //self.performSegueWithIdentifier("ShowExistingNote", sender: self)
+    }
+    
+    // 3 This function is used to check if a row can be edited. In our app we would always like this behaviour, so it will always return true.
+    func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
+        return true
+    }
+    
+    // 4 This function is activated when you left swipe your Table View to enter edit mode and are presented with the option to Delete the selected row.
+    func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
+        if editingStyle == .Delete {
+            let note = self.notes[indexPath.row] as Object;
+            
+            let realm = Realm();
+            
+            realm.write() {
+                realm.delete(note);
+            }
+            
+            self.notes = realm.objects(Note).sorted("modificationDate", ascending: false);
+        }
+    }
+    
 }
 
