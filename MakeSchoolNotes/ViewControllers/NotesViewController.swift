@@ -14,25 +14,27 @@ class NotesViewController: UIViewController {
     @IBOutlet weak var tableView:UITableView!;
     
     @IBAction func unwindToSegue(segue: UIStoryboardSegue) {
-        
         if let identifier = segue.identifier {
             
             let realm = Realm();
             
             switch identifier {
-                
+            // in case the "save" button was pressed at the last view controller, saves the note.
             case "Save":
+                // accesses the past NewNoteViewController;
                 let source = segue.sourceViewController as! NewNoteViewController; //1
                 
                 realm.write() {
+                    // stores the 'note' attribute of the past NewNoteViewController;
                     realm.add(source.note!);
                 }
-                
+            // else, doesn't do anything.
             default:
-                println("No one loves \(identifier)")
+                println("No one loves \(identifier)");
             }
             
             self.notes = realm.objects(Note).sorted("modificationDate", ascending: false);
+        
         }
     }
     
@@ -47,20 +49,25 @@ class NotesViewController: UIViewController {
         super.viewDidLoad()
         // Do any additional setup after loading the view, typically from a nib.
         self.tableView.dataSource = self;
+        // adds extension NotesViewController:UITableViewDataSource (located below) as delegate
         self.tableView.delegate = self;
         
         // dynamically adds an arbitrary note to test table view reloading and displaying new info gotten after some note addition:
-        //let myNote = Note();
-        //myNote.title = "Some useless testing text";
-        //myNote.content = "raw static information is worth nothing.";
+        let myNote = Note();
+        myNote.title = "Some useless testing text";
+        myNote.content = "raw static information is worth nothing.";
         
         // establishes a connection to Realm.
-        let realm = Realm();
+        //do {
+            let realm = Realm();
+        //} catch {
+        //    println("handling error");
+        //}
         // write method will store information that can be afterwards retrieved; this storage logic will be provided via a closure.
-        realm.write() {
-            //realm.deleteAll(); // clears the app out of data.
-            //realm.add(myNote);
-        }
+        //realm.write() {
+        //    realm.deleteAll(); // clears the app out of data.
+        //    realm.add(myNote);
+        //}
         
         // fetches saved notes and assigns the fetch value to the 'notes' variable:
         //self.notes = realm.objects(Note);
